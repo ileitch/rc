@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+$:.push(File.join(File.expand_path(File.dirname(__FILE__)), '..', 'lib'))
+require 'rc'
+Rc::Runner.execute(*ARGV)
