@@ -2,11 +2,15 @@ require 'cloudservers'
 
 module Rc
   class CloudServers
+    class << self
+      attr_accessor :connection
+    end
+
     def self.execute(command, args)
       new(args).send(command)
     end
 
-    def initialize(*args)
+    def initialize(args)
       @args = args
     end
 
@@ -26,16 +30,31 @@ module Rc
       server.reboot
     end
 
+    def size
+      flavor = server.flavor
+      puts "Disk: #{flavor.disk}GB"
+      puts "RAM: #{flavor.ram}GB"
+    end
+
+    def ip
+      puts "Public: #{server.addresses[:public].join(', ')}"
+      puts "Private: #{server.addresses[:private].join(', ')}"
+    end
+
+    def info
+      puts "#{server.name} (#{server.id})\nStatus: #{server.status}\nImage: #{server.image.name}\nFlavor: #{server.flavor.name}"
+    end
+
     protected
 
     def connection
-      return @connection if @connection
+      return self.class.connection if self.class.connection
       STDOUT.write('Username: ')
       username = gets
       STDOUT.write('API key: ')
       api_key = gets
       begin
-        @connection ||= ::CloudServers::Connection.new(:username => username, :api_key => api_key)
+        self.class.connection ||= ::CloudServers::Connection.new(:username => username, :api_key => api_key)
       rescue ::CloudServers::Exception::Authentication => e
         STDERR.puts(e.message)
         exit 1
@@ -45,12 +64,12 @@ module Rc
     def server
       name_or_id = @args.shift
       id = name_or_id != /^\d+$/ ? id_for_server_named(name_or_id) : name_or_id
-      connection.server(id)
+      @server ||= connection.server(id)
     end
 
     def id_for_server_named(name)
       server = connection.servers.find { |server| server[:name] == name }
-      server[:id]
+      server[:id] if server
     end
   end
 end

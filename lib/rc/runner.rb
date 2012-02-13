@@ -10,8 +10,12 @@ module Rc
     end
 
     def execute
-      group = parse_group
-      group.execute(@args.shift, @args)
+      if @args.empty?
+        Rc::Repl.start
+      else
+        group = parse_group
+        group.execute(@args.shift, @args)
+      end
     end
 
     protected
